@@ -1,11 +1,11 @@
 #[derive(Debug, Default)]
 pub struct Reg {
-    x: u8,
-    y: u8,
-    a: u8,
-    pc: u16,
-    sp: u8,
-    p: u8,
+    pub x: u8,
+    pub y: u8,
+    pub a: u8,
+    pub pc: u16,
+    pub sp: u8,
+    pub p: u8,
 }
 
 impl Reg {

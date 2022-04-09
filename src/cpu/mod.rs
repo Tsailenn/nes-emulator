@@ -22,6 +22,61 @@ impl CPU {
 
         todo!()
     }
+
+    pub fn read_addr_mode(&self, mode: &AddressingMode) -> u16 {
+        match mode {
+            AddressingMode::Immediate => self.reg.pc,
+            AddressingMode::ZeroPage => self.mem.read(self.reg.pc) as u16,
+            AddressingMode::Absolute => self.mem.read_u16(self.reg.pc),
+            AddressingMode::ZeroPageX => {
+                let mem_data = self.mem.read(self.reg.pc);
+                let data = mem_data.wrapping_add(self.reg.x) as u16;
+                data
+            }
+            AddressingMode::ZeroPageY => {
+                let mem_data = self.mem.read(self.reg.pc);
+                let data = mem_data.wrapping_add(self.reg.y) as u16;
+                data
+            }
+            AddressingMode::AbsoluteX => {
+                let mem_data = self.mem.read_u16(self.reg.pc);
+                let data = mem_data.wrapping_add(self.reg.x as u16);
+                data
+            }
+            AddressingMode::AbsoluteY => {
+                let mem_data = self.mem.read_u16(self.reg.pc);
+                let data = mem_data.wrapping_add(self.reg.y as u16);
+                data
+            }
+            AddressingMode::IndirectX => {
+                let base_ptr = self.mem.read(self.reg.pc);
+                let ptr = (base_ptr as u8).wrapping_add(self.reg.x);
+
+                let data = self.mem.read_u16(ptr as u16);
+                data
+            }
+            AddressingMode::IndirectY => {
+                let base_ptr = self.mem.read(self.reg.pc);
+
+                let data = self.mem.read_u16(base_ptr as u16);
+                let deref = data.wrapping_add(self.reg.y as u16);
+                deref
+            }
+        }
+    }
+}
+
+pub enum AddressingMode {
+    Immediate,
+    ZeroPage,
+    Absolute,
+    ZeroPageX,
+    ZeroPageY,
+    AbsoluteX,
+    AbsoluteY,
+    IndirectX,
+    IndirectY,
+    Indirect,
 }
 
 // #[derive(Debug)]
