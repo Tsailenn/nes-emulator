@@ -3,7 +3,7 @@ pub mod opcode;
 pub mod register;
 
 use mem::Mem;
-use opcode::AddressingMode;
+use opcode::{AddressingMode, OpCode};
 use register::Reg;
 
 #[derive(Debug, Default)]
@@ -13,6 +13,9 @@ pub struct CPU {
 }
 
 impl CPU {
+    const STACK: u16 = 0x0100;
+    const STACK_RESET: u8 = 0xfd;
+
     pub fn new() -> Self {
         CPU::default()
     }
@@ -25,10 +28,35 @@ impl CPU {
         todo!()
     }
 
-    pub fn get_operand_address(&mut self, mode: &AddressingMode) -> u16 {
-        //mapper here
-        self.reg.pc += 1;
+    pub fn run(&mut self) {
+        loop {
+            //the pc-pointed instruction
+            let word = self.mem.read(self.reg.pc);
 
+            //execute
+            self.execute(word);
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.reg.a = 0;
+        self.reg.x = 0;
+        self.reg.p = 0;
+
+        self.reg.pc = self.mem.read_u16(0xFFFC);
+        todo!()
+    }
+
+    fn execute(&mut self, word: u8) {
+        //instruction first
+        let op_code = OpCode::map(word).unwrap();
+        self.reg.pc += 1;
+        //then data
+        let addr = self.get_operand_address(&op_code.mode);
+        self.reg.pc += 1;
+    }
+
+    pub fn get_operand_address(&self, mode: &AddressingMode) -> u16 {
         //addr
         let addr = match mode {
             AddressingMode::Immediate => self.reg.pc,
@@ -81,7 +109,6 @@ impl CPU {
             }
         };
 
-        self.reg.pc += 1;
         addr
     }
 

@@ -37,6 +37,13 @@ impl OpCode {
             mode: mode,
         }
     }
+
+    pub fn map(target: u8) -> Option<&'static OpCode> {
+        let map = &OP_CODE;
+        let index = map.iter().position(|el| el.code == target)?;
+
+        map.get(index)
+    }
 }
 
 lazy_static! {
