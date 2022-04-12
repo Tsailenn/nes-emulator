@@ -72,11 +72,13 @@ mod tests {
 
         cpu.mem.write_u16(0xfffc, 0x8000);
 
+        cpu.reset();
+
         cpu
     }
 
     #[test]
-    fn test_reset() {
+    fn test_mem_and_reg() {
         let mut cpu = instantiate_test_cpu();
 
         assert_eq!(cpu.mem.read_u16(0xfffc), 0x8000);
@@ -85,5 +87,53 @@ mod tests {
 
         assert_eq!(cpu.reg.p.bits(), 0b00100100);
         assert_eq!(cpu.reg.pc, 0x8000);
+
+        let program: Vec<u8> = vec![0xa9, 0xc0, 0xaa, 0xe8, 0x00];
+
+        cpu.mem.load(program, Some(0x8001));
+        assert_eq!(cpu.mem.read(0x8001), 0xa9);
+        assert_eq!(cpu.mem.read(0x8002), 0xc0);
+    }
+
+    #[test]
+    fn test_store_ops() {
+        let mut cpu = CPU::default();
+
+        let program = vec![
+            //store
+            0x85,
+            0x69,
+            0x86,
+            (0x69 + 0x01),
+            0x84,
+            (0x69 + 0x02),
+            0x00,
+        ];
+
+        cpu.load(program);
+        cpu.reset();
+        assert_eq!(cpu.reg.pc, 0x8000);
+        assert_eq!(cpu.mem.read(cpu.reg.pc), 0x85);
+
+        cpu.reg.a = 0x01;
+        cpu.reg.x = 0x02;
+        cpu.reg.y = 0x03;
+
+        cpu.run();
+        assert_eq!(cpu.mem.read(0x69), 0x01);
+        assert_eq!(cpu.mem.read(0x69 + 0x01), 0x02);
+        assert_eq!(cpu.mem.read(0x69 + 0x02), 0x03);
+    }
+
+    #[test]
+    fn test_load_ops() {
+        let mut cpu = CPU::default();
+
+        let program = vec![
+            //load
+            0xa9, 0x69, 0xa2, 0x69, 0xa0, 0x69,
+        ];
+
+        cpu.load_and_run(program);
     }
 }

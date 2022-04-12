@@ -22,21 +22,25 @@ impl CPU {
         CPU::default()
     }
 
-    pub fn lda(&mut self, addr: u16) {
-        // let param = program[self.program_counter as usize];
-        // self.program_counter += 1;
-        // self.register_a = param;
+    pub fn load_and_run(&mut self, program: Vec<u8>) {
+        self.load(program);
+        self.reset();
+        self.run()
+    }
 
-        todo!()
+    pub fn load(&mut self, program: Vec<u8>) {
+        self.mem.load(program, None);
+        self.mem.write_u16(0xfffc, 0x8000);
     }
 
     pub fn run(&mut self) {
-        loop {
+        let mut continue_cycle = true;
+        while (continue_cycle) {
             //the pc-pointed instruction
             let word = self.mem.read(self.reg.pc);
 
             //execute
-            self.execute(word);
+            continue_cycle = self.execute(word);
         }
     }
 
@@ -45,13 +49,43 @@ impl CPU {
         self.reg.reset(pc_start_addr);
     }
 
-    fn execute(&mut self, word: u8) {
+    fn execute(&mut self, word: u8) -> bool {
         //instruction first
         let op_code = OpCode::map(word).unwrap();
-        self.reg.pc += 1;
+
+        if op_code.mode == AddressingMode::NoneAddressing {
+            return false;
+        }
+
         //then data
-        let addr = self.get_operand_address(&op_code.mode);
         self.reg.pc += 1;
+        let addr = self.get_operand_address(&op_code.mode);
+        //enters next instruction (for the next cycle)
+        self.reg.pc += 1;
+
+        match op_code.mnemonic {
+            "LDA" => {
+                self.lda(addr);
+            }
+            "BRK" => {}
+            "LDX" => {
+                self.ldx(addr);
+            }
+            "LDY" => {
+                self.ldy(addr);
+            }
+            "STA" => {
+                self.sta(addr);
+            }
+            "STX" => {
+                self.stx(addr);
+            }
+            "STY" => {
+                self.sty(addr);
+            }
+            _ => panic!("{:#?}: {:#?}", op_code.mnemonic, op_code.code),
+        };
+        true
     }
 
     pub fn get_operand_address(&self, mode: &AddressingMode) -> u16 {
@@ -110,133 +144,33 @@ impl CPU {
         addr
     }
 
-    // pub fn read_addr_mode(&self, mode: &AddressingMode) -> u16 {
-    //     match mode {
-    //         AddressingMode::Immediate => self.reg.pc,
-    //         AddressingMode::ZeroPage => self.mem.read(self.reg.pc) as u16,
-    //         AddressingMode::Absolute => self.mem.read_u16(self.reg.pc),
-    //         AddressingMode::ZeroPageX => {
-    //             let mem_data = self.mem.read(self.reg.pc);
-    //             let data = mem_data.wrapping_add(self.reg.x) as u16;
-    //             data
-    //         }
-    //         AddressingMode::ZeroPageY => {
-    //             let mem_data = self.mem.read(self.reg.pc);
-    //             let data = mem_data.wrapping_add(self.reg.y) as u16;
-    //             data
-    //         }
-    //         AddressingMode::AbsoluteX => {
-    //             let mem_data = self.mem.read_u16(self.reg.pc);
-    //             let data = mem_data.wrapping_add(self.reg.x as u16);
-    //             data
-    //         }
-    //         AddressingMode::AbsoluteY => {
-    //             let mem_data = self.mem.read_u16(self.reg.pc);
-    //             let data = mem_data.wrapping_add(self.reg.y as u16);
-    //             data
-    //         }
-    //         AddressingMode::IndirectX => {
-    //             let base_ptr = self.mem.read(self.reg.pc);
-    //             let ptr = (base_ptr as u8).wrapping_add(self.reg.x);
+    fn lda(&mut self, addr: u16) {
+        let data = self.mem.read(addr);
+        self.reg.a = data;
+        self.reg.update_zero_and_negative_flags(data);
+    }
 
-    //             let data = self.mem.read_u16(ptr as u16);
-    //             data
-    //         }
-    //         AddressingMode::IndirectY => {
-    //             let base_ptr = self.mem.read(self.reg.pc);
+    fn ldx(&mut self, addr: u16) {
+        let data = self.mem.read(addr);
+        self.reg.x = data;
+        self.reg.update_zero_and_negative_flags(data);
+    }
 
-    //             let data = self.mem.read_u16(base_ptr as u16);
-    //             let deref = data.wrapping_add(self.reg.y as u16);
-    //             deref
-    //         }
-    //         AddressingMode::Indirect => {
+    fn ldy(&mut self, addr: u16) {
+        let data = self.mem.read(addr);
+        self.reg.y = data;
+        self.reg.update_zero_and_negative_flags(data);
+    }
 
-    //         }
-    //     }
-    // }
+    fn sta(&mut self, addr: u16) {
+        self.mem.write(addr, self.reg.a);
+    }
+
+    fn stx(&mut self, addr: u16) {
+        self.mem.write(addr, self.reg.x);
+    }
+
+    fn sty(&mut self, addr: u16) {
+        self.mem.write(addr, self.reg.y);
+    }
 }
-
-// #[derive(Debug)]
-// pub struct CPU {
-//     pub register_a: u8,
-//     pub status: u8,
-//     pub program_counter: u16,
-//     pub register_x: u8,
-// }
-
-// impl Default for CPU {
-//     fn default() -> Self {
-//         CPU {
-//             register_a: 0,
-//             status: 0,
-//             program_counter: 0,
-//             register_x: 0,
-//         }
-//     }
-// }
-
-// impl CPU {
-//     pub fn new() -> Self {
-//         CPU {
-//             register_a: 0,
-//             register_x: 0,
-//             status: 0,
-//             program_counter: 0,
-//         }
-//     }
-
-//     fn lda(&mut self, value: u8) {
-//         self.register_a = value;
-//         self.update_zero_and_negative_flags(self.register_a);
-//     }
-
-//     fn tax(&mut self) {
-//         self.register_x = self.register_a;
-//         self.update_zero_and_negative_flags(self.register_x);
-//     }
-
-//     fn update_zero_and_negative_flags(&mut self, result: u8) {
-//         if result == 0 {
-//             self.status = self.status | 0b0000_0010;
-//         } else {
-//             self.status = self.status & 0b1111_1101;
-//         }
-
-//         if result & 0b1000_0000 != 0 {
-//             self.status = self.status | 0b1000_0000;
-//         } else {
-//             self.status = self.status & 0b0111_1111;
-//         }
-//     }
-
-//     fn inx(&mut self) {
-//         self.register_x = self.register_x.wrapping_add(1);
-//         self.update_zero_and_negative_flags(self.register_x);
-//     }
-
-//     pub fn interpret(&mut self, program: Vec<u8>) {
-//         self.program_counter = 0;
-
-//         loop {
-//             let opscode = program[self.program_counter as usize];
-//             self.program_counter += 1;
-
-//             match opscode {
-//                 0xA9 => {
-//                     let param = program[self.program_counter as usize];
-//                     self.program_counter += 1;
-
-//                     self.lda(param);
-//                 }
-
-//                 0xAA => self.tax(),
-
-//                 0xe8 => self.inx(),
-
-//                 0x00 => return,
-
-//                 _ => todo!(),
-//             }
-//         }
-//     }
-// }
