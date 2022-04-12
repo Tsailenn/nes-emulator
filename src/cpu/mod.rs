@@ -1,10 +1,13 @@
 pub mod mem;
 pub mod opcode;
 pub mod register;
+pub mod test;
 
 use mem::Mem;
 use opcode::{AddressingMode, OpCode};
 use register::Reg;
+
+use self::register::ProcessorStatus;
 
 #[derive(Debug, Default)]
 pub struct CPU {
@@ -14,7 +17,6 @@ pub struct CPU {
 
 impl CPU {
     const STACK: u16 = 0x0100;
-    const STACK_RESET: u8 = 0xfd;
 
     pub fn new() -> Self {
         CPU::default()
@@ -39,12 +41,8 @@ impl CPU {
     }
 
     pub fn reset(&mut self) {
-        self.reg.a = 0;
-        self.reg.x = 0;
-        self.reg.p = 0;
-
-        self.reg.pc = self.mem.read_u16(0xFFFC);
-        todo!()
+        let pc_start_addr = self.mem.read_u16(0xFFFC);
+        self.reg.reset(pc_start_addr);
     }
 
     fn execute(&mut self, word: u8) {
