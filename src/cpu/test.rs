@@ -135,5 +135,20 @@ mod tests {
         ];
 
         cpu.load_and_run(program);
+
+        assert_eq!(cpu.reg.a, 0x69);
+        assert_eq!(cpu.reg.x, 0x69);
+        assert_eq!(cpu.reg.y, 0x69);
+    }
+
+    #[test]
+    fn test_transfer_ops() {
+        let mut cpu = CPU::default();
+
+        cpu.reset();
+        let program = vec![
+            //transfer
+
+        ];
     }
 }

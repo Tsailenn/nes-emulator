@@ -83,6 +83,18 @@ impl CPU {
             "STY" => {
                 self.sty(addr);
             }
+            "TXA" => {
+                self.txa(addr);
+            }
+            "TYA" => {
+                self.tya(addr);
+            }
+            "TAX" => {
+                self.tax(addr);
+            }
+            "TAY" => {
+                self.tay(addr);
+            }
             _ => panic!("{:#?}: {:#?}", op_code.mnemonic, op_code.code),
         };
         true
@@ -144,6 +156,7 @@ impl CPU {
         addr
     }
 
+    //load and store
     fn lda(&mut self, addr: u16) {
         let data = self.mem.read(addr);
         self.reg.a = data;
@@ -172,5 +185,26 @@ impl CPU {
 
     fn sty(&mut self, addr: u16) {
         self.mem.write(addr, self.reg.y);
+    }
+
+    //register transfer
+    fn txa(&mut self, addr: u16) {
+        self.reg.a = self.reg.x;
+        self.reg.update_zero_and_negative_flags(self.reg.a);
+    }
+
+    fn tya(&mut self, addr: u16) {
+        self.reg.a = self.reg.y;
+        self.reg.update_zero_and_negative_flags(self.reg.a);
+    }
+
+    fn tax(&mut self, addr: u16) {
+        self.reg.x = self.reg.a;
+        self.reg.update_zero_and_negative_flags(self.reg.x);
+    }
+
+    fn tay(&mut self, addr: u16) {
+        self.reg.y = self.reg.a;
+        self.reg.update_zero_and_negative_flags(self.reg.y);
     }
 }
